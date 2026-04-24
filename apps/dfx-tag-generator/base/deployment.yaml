@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: dfx-tag-generator
-          image: ghcr.io/alexmchugh1/ot-edge-asset-tag-generator:latest
+          image: ghcr.io/alexmchughdev/ot-edge-asset-tag-generator:latest
           ports:
             - containerPort: 9092
           resources:

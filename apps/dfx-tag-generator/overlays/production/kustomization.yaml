@@ -3,6 +3,6 @@ kind: Kustomization
 resources:
 - ../../base
 images:
-- name: ghcr.io/alexmchugh1/ot-edge-asset-tag-generator
-  newName: ghcr.io/alexmchugh1/ot-edge-asset-tag-generator
+- name: ghcr.io/alexmchughdev/ot-edge-asset-tag-generator
+  newName: ghcr.io/alexmchughdev/ot-edge-asset-tag-generator
   newTag: sha-d4d1090
