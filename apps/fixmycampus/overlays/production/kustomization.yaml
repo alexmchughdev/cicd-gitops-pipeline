@@ -4,8 +4,8 @@ resources:
 - ../../base
 images:
 - name: ghcr.io/alexmchughdev/fixmycampus-client
-  newName: ghcr.io/alexmchughdev/fixmycampus-client
-  newTag: sha-bf897e4
+  newName: ghcr.io/alexmchughdev/fixmycampus-frontend
+  newTag: sha-2dc9148
 - name: ghcr.io/alexmchughdev/fixmycampus-server
-  newName: ghcr.io/alexmchughdev/fixmycampus-server
-  newTag: sha-bf897e4
+  newName: ghcr.io/alexmchughdev/fixmycampus-backend
+  newTag: sha-2dc9148
