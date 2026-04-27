@@ -1,0 +1,22 @@
+flowchart TB
+  subgraph patternA[Pattern A — centralised manifests]
+    direction LR
+    pushA["push to app repo main"]
+    --> buildA["docker build &amp; push<br/>ghcr.io/.../&lt;app&gt;:sha-XXXX"]
+    --> sshA["SSH-clone manifest repo<br/>(MANIFEST_DEPLOY_KEY)"]
+    --> kustA["kustomize edit set image<br/>apps/&lt;app&gt;/overlays/production"]
+    --> commitA["commit &amp; push<br/>to platform-engineering"]
+  end
+
+  subgraph patternB[Pattern B — split infra repo]
+    direction LR
+    triggerB["gh workflow run<br/>(manual)"]
+    --> checkoutB["checkout app source<br/>(APP_REPO_DEPLOY_KEY, read-only)"]
+    --> buildB["docker build &amp; push<br/>fixmycampus-frontend / -backend"]
+    --> sshB["SSH-clone manifest repo<br/>(MANIFEST_DEPLOY_KEY)"]
+    --> kustB["kustomize edit set image<br/>apps/fixmycampus/overlays/production"]
+    --> commitB["commit &amp; push<br/>to platform-engineering"]
+  end
+
+  commitA --> argocd((ArgoCD reconciles))
+  commitB --> argocd

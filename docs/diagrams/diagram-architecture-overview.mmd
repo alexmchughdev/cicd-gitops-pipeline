@@ -1,0 +1,30 @@
+flowchart LR
+  dev["developer"]
+  appA["app source repo<br/>(Pattern A)"]
+  appB["app source repo<br/>(Pattern B)"]
+  infraB["infra repo<br/>(Pattern B only)"]
+  ci["GitHub Actions"]
+  ghcr[("GHCR")]
+  manifest["platform-engineering<br/>(this repo)"]
+  argocd["ArgoCD"]
+  rke2["RKE2 cluster<br/>Rocky Linux 9.7"]
+  nginx["nginx Ingress<br/>(rke2-bundled)"]
+  cfd["cloudflared<br/>(systemd on host)"]
+  cf["Cloudflare edge<br/>(TLS)"]
+  user(("public user"))
+
+  dev -- git push --> appA
+  dev -- git push --> appB
+  dev -- gh workflow run --> infraB
+  appA --> ci
+  infraB -- "ssh deploy-key checkout" --> appB
+  infraB --> ci
+  ci -- docker push --> ghcr
+  ci -- "kustomize edit + git push" --> manifest
+  manifest -. watched .-> argocd
+  argocd -- "server-side apply" --> rke2
+  ghcr -. image pull .-> rke2
+  rke2 --> nginx
+  nginx -- "HTTP 80" --> cfd
+  cfd --> cf
+  cf -- HTTPS --> user

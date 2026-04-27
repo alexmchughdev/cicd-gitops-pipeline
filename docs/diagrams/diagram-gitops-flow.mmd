@@ -1,0 +1,20 @@
+sequenceDiagram
+  autonumber
+  participant CI as GitHub Actions
+  participant Repo as platform-engineering<br/>(this repo)
+  participant Argo as ArgoCD
+  participant K8s as RKE2 API server
+  participant Pod as workload pod
+
+  CI->>Repo: commit (kustomize edit set image)
+  Note over Argo: poll loop ~3 min<br/>+ webhook on push
+
+  Argo->>Repo: git fetch + kustomize build
+  Argo->>K8s: server-side apply (Deployment, Service, Ingress)
+  K8s-->>Argo: applied with new ReplicaSet
+  K8s->>Pod: create new pods<br/>(image pulled from GHCR)
+  Pod-->>K8s: Ready=true
+  K8s->>Pod: terminate old ReplicaSet pods
+  Argo->>Repo: status: Synced + Healthy
+
+  Note over Argo,K8s: selfHeal: true<br/>any out-of-band kubectl edit<br/>is reverted within minutes

@@ -1,0 +1,32 @@
+flowchart LR
+  user(("public user"))
+  cf["Cloudflare edge<br/>TLS terminator"]
+  cfd["cloudflared<br/>tunnel: homelab<br/>(systemd unit)"]
+
+  subgraph host[Cluster host — Rocky Linux 9.7]
+    direction TB
+    nginx["rke2-ingress-nginx<br/>kube-system, port 80"]
+    np30092["NodePort 30092<br/>(legacy, dfx only)"]
+
+    subgraph apps[Applications]
+      direction TB
+      svcAm["Service<br/>alexmchugh-dev"]
+      svcFc["Service<br/>fixmycampus-client"]
+      svcFs["Service<br/>fixmycampus-server"]
+      svcDfx["Service<br/>dfx-tag-generator"]
+    end
+  end
+
+  user -- HTTPS --> cf
+  cf -- "tunnel<br/>(QUIC)" --> cfd
+  cfd -- "Host: alexmchugh.dev" --> nginx
+  cfd -- "Host: fixmycampus.alexmchugh.dev" --> nginx
+  cfd -- "Host: fixmycampus-api.alexmchugh.dev" --> nginx
+  cfd -- "Host: getdfx.uk" --> np30092
+
+  nginx --> svcAm
+  nginx --> svcFc
+  nginx --> svcFs
+  np30092 --> svcDfx
+
+  svcFc -. "/api/* in-pod nginx proxy" .-> svcFs
