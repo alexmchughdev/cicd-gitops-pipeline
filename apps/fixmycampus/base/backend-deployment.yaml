@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fixmycampus-server
+  labels:
+    app: fixmycampus
+    component: server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fixmycampus
+      component: server
+  template:
+    metadata:
+      labels:
+        app: fixmycampus
+        component: server
+    spec:
+      containers:
+        - name: server
+          image: ghcr.io/alexmchughdev/fixmycampus-server:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5050
+              name: http
+          env:
+            - name: PORT
+              value: "5050"
+            - name: CORS_ORIGIN
+              value: https://fixmycampus.alexmchugh.dev
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: fixmycampus-secrets
+                  key: MONGO_URI
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /api/test
+              port: 5050
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /api/test
+              port: 5050
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true

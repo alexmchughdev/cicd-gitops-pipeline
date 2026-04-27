@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fixmycampus-server
+  labels:
+    app: fixmycampus
+    component: server
+  annotations:
+    # TLS is terminated by Cloudflare at the edge; traffic from cloudflared
+    # to the ingress controller stays on HTTP to avoid a redirect loop.
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: fixmycampus-api.alexmchugh.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fixmycampus-server
+                port:
+                  number: 5050

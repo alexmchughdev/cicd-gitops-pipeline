@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+images:
+  - name: ghcr.io/alexmchughdev/fixmycampus-client
+    newName: ghcr.io/alexmchughdev/fixmycampus-client
+    newTag: sha-init
+  - name: ghcr.io/alexmchughdev/fixmycampus-server
+    newName: ghcr.io/alexmchughdev/fixmycampus-server
+    newTag: sha-init
