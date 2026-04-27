@@ -3,7 +3,6 @@ kind: Kustomization
 namespace: fixmycampus
 resources:
   - namespace.yaml
-  - secret.yaml
   - frontend-deployment.yaml
   - frontend-service.yaml
   - frontend-ingress.yaml

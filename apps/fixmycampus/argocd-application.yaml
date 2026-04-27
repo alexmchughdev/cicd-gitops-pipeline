@@ -1,6 +1,12 @@
 # ArgoCD Application registering apps/fixmycampus/overlays/production.
 # Lives outside the kustomization on purpose so ArgoCD does not try to
 # reconcile its own Application resource. Apply once with kubectl.
+#
+# The fixmycampus-secrets Secret is intentionally NOT in the git manifest;
+# it carries the Atlas connection string and is created/updated out of
+# band via kubectl. Annotate the live Secret with
+#   argocd.argoproj.io/compare-options: IgnoreExtraneous
+# so ArgoCD does not treat it as drift and try to prune it.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -24,17 +30,9 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
-      - RespectIgnoreDifferences=true
     retry:
       limit: 5
       backoff:
         duration: 10s
         factor: 2
         maxDuration: 3m
-  ignoreDifferences:
-    - group: ""
-      kind: Secret
-      name: fixmycampus-secrets
-      jsonPointers:
-        - /data
-        - /stringData
