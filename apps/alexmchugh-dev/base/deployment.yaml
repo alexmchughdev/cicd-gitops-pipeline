@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alexmchugh-dev
+  labels:
+    app: alexmchugh-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alexmchugh-dev
+  template:
+    metadata:
+      labels:
+        app: alexmchugh-dev
+    spec:
+      containers:
+        - name: alexmchugh-dev
+          image: ghcr.io/alexmchughdev/alexmchugh-dev:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          securityContext:
+            # nginx:alpine binds port 80 so cannot run as non-root without
+            # capability grants. Switch to nginxinc/nginx-unprivileged on
+            # port 8080 to harden further.
+            allowPrivilegeEscalation: false
