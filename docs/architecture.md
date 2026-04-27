@@ -52,49 +52,24 @@ TLS is always terminated at Cloudflare's edge. The cluster speaks plain HTTP. In
 
 For FixMyCampus specifically, the SPA's nginx pod also reverse-proxies `/api/` to the backend Service, so the React code stays same-origin and CORS is not needed.
 
-## CI/CD flow — Pattern A (centralised manifests)
-
-Used by `OT-edge-asset-tag-generator` and `alexmchugh-dev`.
+## CI/CD flow
 
 ```mermaid
 flowchart LR
-  push["git push to<br/>app repo main"] --> gha["GitHub Actions<br/>build &amp; push"]
+  push["git push (app repo)"] --> gha["GitHub Actions<br/>build &amp; push"]
   gha --> ghcr[("GHCR<br/>ghcr.io/alexmchughdev/&lt;image&gt;:sha-XXXX")]
   gha --> sshclone["SSH-clone this repo<br/>(MANIFEST_DEPLOY_KEY)"]
-  sshclone --> kedit["kustomize edit set image<br/>in overlays/production"]
+  sshclone --> kedit["kustomize edit set image<br/>in apps/&lt;app&gt;/overlays/production"]
   kedit --> commit["git commit + push<br/>to platform-engineering main"]
-  commit -. ArgoCD watches .-> argocd
-  argocd --> rolling["rolling update"]
+  commit -. ArgoCD watches .-> argocd[ArgoCD]
+  argocd --> rolling["rolling update<br/>(new image, old ReplicaSet drained)"]
 ```
 
-Key points:
-
-- Build and manifest update are a single workflow with two jobs. The manifest update only runs after a successful image push, so a stuck build never leaves the cluster on a half-applied state.
+- Build and manifest update are a single workflow with two jobs. The manifest update only runs after a successful image push, so a failed build never leaves the cluster on a half-applied state.
 - Image tag is `sha-<short-sha>` of the app source commit. Mutable tags (`latest`) are not used in production overlays.
-- The CI runner needs `MANIFEST_DEPLOY_KEY` (an SSH private key with write access to this repo) to push. Public key is registered as a deploy key on this repo.
+- The CI runner needs `MANIFEST_DEPLOY_KEY` (an SSH private key with write access to this repo) to push. The public half is registered as a deploy key on this repo.
 
-## CI/CD flow — Pattern B (split infra repo)
-
-Used by `fixmycampus`. The application repo is intentionally free of any deployment scaffolding.
-
-```mermaid
-flowchart LR
-  push["git push to<br/>fixmycampus main"] -. no CI .-> appRepo[("alexmchughdev/fixmycampus")]
-  manual["gh workflow run<br/>(manual trigger on infra repo)"] --> infra["fixmycampus-infra<br/>workflow"]
-  infra -- "actions/checkout<br/>(read-only deploy key)" --> appRepo
-  infra --> build["docker buildx<br/>(infra Dockerfile + app context)"]
-  build --> ghcr2[("GHCR<br/>fixmycampus-frontend / -backend<br/>:sha-XXXX")]
-  infra --> sshclone2["SSH-clone this repo<br/>(MANIFEST_DEPLOY_KEY)"]
-  sshclone2 --> kedit2["kustomize edit set image<br/>in apps/fixmycampus/overlays/production"]
-  kedit2 --> commit2["git commit + push<br/>to platform-engineering main"]
-  commit2 -. ArgoCD watches .-> argocd2["ArgoCD"]
-```
-
-Differences from Pattern A:
-
-- Trigger is manual (`gh workflow run` or the GitHub Actions UI's "Run workflow" button), not push-based. The `app_ref` input controls which fixmycampus revision gets built.
-- Two deploy keys instead of one: `APP_REPO_DEPLOY_KEY` (read-only, on the app repo) and `MANIFEST_DEPLOY_KEY` (write, on this repo).
-- Two image names per release (`fixmycampus-frontend`, `fixmycampus-backend`) instead of `<app>-client/-server`. The infra repo created fresh GHCR packages it owns; the legacy `fixmycampus-client/-server` packages remain in GHCR but the cluster does not reference them.
+`fixmycampus` is a small variation: its Dockerfile and CI workflow live in a sidecar `fixmycampus-infra` repo rather than alongside the application source, and the build is triggered manually via `gh workflow run`. Same end state — a `kustomize edit` commit on this repo. See `decisions/0003`.
 
 ## GitOps reconciliation flow
 

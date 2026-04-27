@@ -1,8 +1,6 @@
 flowchart LR
   dev["developer"]
-  appA["app source repo<br/>(Pattern A)"]
-  appB["app source repo<br/>(Pattern B)"]
-  infraB["infra repo<br/>(Pattern B only)"]
+  appRepo["app source repo"]
   ci["GitHub Actions"]
   ghcr[("GHCR")]
   manifest["platform-engineering<br/>(this repo)"]
@@ -13,12 +11,8 @@ flowchart LR
   cf["Cloudflare edge<br/>(TLS)"]
   user(("public user"))
 
-  dev -- git push --> appA
-  dev -- git push --> appB
-  dev -- gh workflow run --> infraB
-  appA --> ci
-  infraB -- "ssh deploy-key checkout" --> appB
-  infraB --> ci
+  dev -- git push --> appRepo
+  appRepo --> ci
   ci -- docker push --> ghcr
   ci -- "kustomize edit + git push" --> manifest
   manifest -. watched .-> argocd

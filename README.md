@@ -1,12 +1,14 @@
-# platform-engineering
+# Self-hosted Kubernetes platform
 
-Personal platform engineering project covering the full delivery lifecycle: source code, continuous integration, container registry, GitOps deployment to a self-hosted Kubernetes cluster, and edge networking. Currently runs three production applications on a single-node RKE2 cluster.
+GitOps from push to production. RKE2 + ArgoCD + GHCR + Cloudflare Tunnel, running three live applications on a single-node home cluster.
+
+This repo is the source of truth ArgoCD reconciles from: per-app Kustomize overlays under `apps/`, infrastructure components and their install methods under `infrastructure/`, end-to-end walkthroughs under `docs/`, and the architectural decisions behind it under `decisions/`.
 
 | App | Live URL | Source |
 |---|---|---|
-| OT-edge asset tag generator | <https://getdfx.uk> | [`alexmchughdev/OT-edge-asset-tag-generator`](https://github.com/alexmchughdev/OT-edge-asset-tag-generator) |
-| Personal site | <https://alexmchugh.dev> | [`alexmchughdev/alexmchugh-dev`](https://github.com/alexmchughdev/alexmchugh-dev) |
-| FixMyCampus | <https://fixmycampus.alexmchugh.dev> | [`alexmchughdev/fixmycampus`](https://github.com/alexmchughdev/fixmycampus) + [`alexmchughdev/fixmycampus-infra`](https://github.com/alexmchughdev/fixmycampus-infra) |
+| OT-edge asset tag generator | <https://getdfx.uk> | [`OT-edge-asset-tag-generator`](https://github.com/alexmchughdev/OT-edge-asset-tag-generator) |
+| Personal site | <https://alexmchugh.dev> | [`alexmchugh-dev`](https://github.com/alexmchughdev/alexmchugh-dev) |
+| FixMyCampus | <https://fixmycampus.alexmchugh.dev> | [`fixmycampus`](https://github.com/alexmchughdev/fixmycampus) |
 
 ## Architecture
 
@@ -49,29 +51,17 @@ Confirmed via `kubectl get pods -A` and `helm list -A`. Anything not in the tabl
 ## Apps
 
 ### OT-edge asset tag generator
-Go microservice issuing UUID-based asset tags + QR codes for OT edge devices. Source: [`alexmchughdev/OT-edge-asset-tag-generator`](https://github.com/alexmchughdev/OT-edge-asset-tag-generator). Public URL: <https://getdfx.uk>. Reaches the cluster via Cloudflare Tunnel → NodePort 30092 (the only app still on a NodePort path; see `decisions/0003`).
+Go microservice issuing UUID-based asset tags + QR codes for OT edge devices. Source: [`alexmchughdev/OT-edge-asset-tag-generator`](https://github.com/alexmchughdev/OT-edge-asset-tag-generator). Public URL: <https://getdfx.uk>.
 
 ### alexmchugh-dev
 Personal website (Next.js, statically built and served by nginx). Source: [`alexmchughdev/alexmchugh-dev`](https://github.com/alexmchughdev/alexmchugh-dev). Public URL: <https://alexmchugh.dev>. Cloudflare Tunnel → nginx Ingress → frontend Service.
 
 ### FixMyCampus
-React (Vite) + Express + MongoDB Atlas; campus maintenance reports. Application source is in [`alexmchughdev/fixmycampus`](https://github.com/alexmchughdev/fixmycampus); deployment infrastructure (Dockerfiles, build workflow, ArgoCD Application) is in a separate repo [`alexmchughdev/fixmycampus-infra`](https://github.com/alexmchughdev/fixmycampus-infra). Public URL: <https://fixmycampus.alexmchugh.dev>. nginx in the frontend pod reverse-proxies `/api/` to the backend Service so the SPA stays same-origin.
+React (Vite) + Express + MongoDB Atlas; campus maintenance reports. Source: [`alexmchughdev/fixmycampus`](https://github.com/alexmchughdev/fixmycampus). Public URL: <https://fixmycampus.alexmchugh.dev>. nginx in the frontend pod reverse-proxies `/api/` to the backend Service so the SPA stays same-origin.
 
-## Deployment patterns
+## Delivery flow
 
-The platform deliberately tolerates two patterns. See `decisions/0003` for the rationale.
-
-### Pattern A — centralised manifests
-Used by **OT-edge-asset-tag-generator** and **alexmchugh-dev**.
-
-The application repo holds source, Dockerfile, and the CI workflow. The workflow builds an image, pushes to GHCR, then SSH-clones this manifest repo and runs `kustomize edit set image` against `apps/<app>/overlays/production/kustomization.yaml`. ArgoCD reconciles from this repo.
-
-### Pattern B — split infra repo
-Used by **FixMyCampus**.
-
-The application repo holds only source code; no Dockerfile, no workflow. A second repo (`fixmycampus-infra`) holds the Dockerfiles, the build workflow, and the ArgoCD Application manifest. The infra workflow checks out app source via a read-only deploy key, builds, and updates this manifest repo. ArgoCD reconciles from this manifest repo (same as Pattern A).
-
-This is technical debt — the variation arose from a constraint on the FixMyCampus source repo. Standardisation criteria are documented in `decisions/0003`.
+Every app follows the same shape: GitHub Actions builds an image, pushes to GHCR, then commits a `kustomize edit set image` to this repo. ArgoCD reconciles from `apps/<app>/overlays/production/`. See `docs/architecture.md` for the end-to-end walkthrough and `decisions/` for the choices behind it.
 
 ## Repository layout
 
@@ -91,7 +81,7 @@ docs/
 decisions/
   0001-cloudflare-tunnel-over-cert-manager.md
   0002-gitops-with-argocd.md
-  0003-deployment-pattern-variation.md
+  0003-per-app-deployment-scaffolding.md
 README.md
 ```
 
@@ -103,8 +93,7 @@ README.md
 - Secret management with SealedSecrets or sops, replacing the current "apply secret out-of-band + annotate to skip ArgoCD" pattern.
 - Observability stack: Prometheus + Grafana for metrics, Loki for logs, optionally Jaeger for tracing.
 - Multi-environment overlays (`overlays/staging`, `overlays/production`) and a staging cluster.
-- Standardise on a single deployment pattern across all apps once the criteria in `decisions/0003` are met.
-- Replace the existing manual ArgoCD Application registration with an ApplicationSet that auto-discovers `apps/*/overlays/production/`. Blocked on a separate fix: the in-cluster `argocd-applicationset-controller` is currently in CrashLoopBackOff (see `infrastructure/argocd/README.md`).
+- ApplicationSet auto-discovery of `apps/*/overlays/production/` to replace manual Application registration. Blocked on a separate fix: the in-cluster `argocd-applicationset-controller` is currently in CrashLoopBackOff (see `infrastructure/argocd/README.md`).
 - High-availability cloudflared (multiple replicas across hosts) once the cluster has more than one node.
 
 Each item is a one-liner because none of them are partially done.
