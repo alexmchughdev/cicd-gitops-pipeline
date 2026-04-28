@@ -1,14 +1,14 @@
-# Self-hosted Kubernetes platform
+# CI/CD GitOps pipeline
 
-GitOps from push to production. RKE2 + ArgoCD + GHCR + Cloudflare Tunnel, running three live applications on a single-node home cluster.
+End-to-end delivery from a developer push to a running pod on a self-hosted Kubernetes cluster: **GitHub Actions → GHCR → this repo (Kustomize overlays) → ArgoCD → RKE2 → nginx Ingress → Cloudflare Tunnel**. Three production applications currently ride this pipeline.
 
-This repo is the source of truth ArgoCD reconciles from: per-app Kustomize overlays under `apps/`, infrastructure components and their install methods under `infrastructure/`, end-to-end walkthroughs under `docs/`, and the architectural decisions behind it under `decisions/`.
+This repo is the manifest source of truth ArgoCD reconciles from. CI workflows in each application repo build images, push to GHCR, then commit a `kustomize edit set image` here. Per-app overlays live under `apps/`, the platform components that serve them under `infrastructure/`, end-to-end walkthroughs under `docs/`, and the architectural decisions behind the platform under `decisions/`.
 
 | App | Live URL | Source |
 |---|---|---|
 | OT-edge asset tag generator | <https://getdfx.uk> | [`OT-edge-asset-tag-generator`](https://github.com/alexmchughdev/OT-edge-asset-tag-generator) |
 | Personal site | <https://alexmchugh.dev> | [`alexmchugh-dev`](https://github.com/alexmchughdev/alexmchugh-dev) |
-| FixMyCampus | <https://fixmycampus.alexmchugh.dev> | [`fixmycampus`](https://github.com/alexmchughdev/fixmycampus) |
+| FixMyCampus | <https://fixmycampus.alexmchugh.dev> | private |
 
 ## Architecture
 
@@ -57,7 +57,7 @@ Go microservice issuing UUID-based asset tags + QR codes for OT edge devices. So
 Personal website (Next.js, statically built and served by nginx). Source: [`alexmchughdev/alexmchugh-dev`](https://github.com/alexmchughdev/alexmchugh-dev). Public URL: <https://alexmchugh.dev>. Cloudflare Tunnel → nginx Ingress → frontend Service.
 
 ### FixMyCampus
-React (Vite) + Express + MongoDB Atlas; campus maintenance reports. Source: [`alexmchughdev/fixmycampus`](https://github.com/alexmchughdev/fixmycampus). Public URL: <https://fixmycampus.alexmchugh.dev>. nginx in the frontend pod reverse-proxies `/api/` to the backend Service so the SPA stays same-origin.
+React (Vite) + Express + MongoDB Atlas; campus maintenance reports. Source repo is private. Public URL: <https://fixmycampus.alexmchugh.dev>. nginx in the frontend pod reverse-proxies `/api/` to the backend Service so the SPA stays same-origin.
 
 ## Delivery flow
 
