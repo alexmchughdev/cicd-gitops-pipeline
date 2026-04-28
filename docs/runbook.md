@@ -31,7 +31,7 @@ Use this when the new app's own repository is the right home for its Dockerfile 
    spec:
      project: default
      source:
-       repoURL: https://github.com/alexmchughdev/platform-engineering.git
+       repoURL: https://github.com/alexmchughdev/cicd-gitops-pipeline.git
        targetRevision: main
        path: apps/<app>/overlays/production
      destination:
@@ -108,7 +108,7 @@ Common causes and fixes:
 gh run list -R alexmchughdev/<repo> --limit 3
 
 # 2. Manifest commit landed
-git -C ~/path/to/platform-engineering pull
+git -C ~/path/to/cicd-gitops-pipeline pull
 grep newTag apps/<app>/overlays/production/kustomization.yaml
 
 # 3. ArgoCD reconciled
@@ -129,9 +129,9 @@ The same SSH keypair is used by every CI repo that pushes to this manifest repo.
    ```
    ssh-keygen -t ed25519 -N "" -C "manifest-deploy-key" -f /tmp/manifest-key
    ```
-2. Add the new public key as a deploy key (write access) on `alexmchughdev/platform-engineering`:
+2. Add the new public key as a deploy key (write access) on `alexmchughdev/cicd-gitops-pipeline`:
    ```
-   gh repo deploy-key add /tmp/manifest-key.pub -R alexmchughdev/platform-engineering --title "manifest-deploy-key" --allow-write
+   gh repo deploy-key add /tmp/manifest-key.pub -R alexmchughdev/cicd-gitops-pipeline --title "manifest-deploy-key" --allow-write
    ```
 3. Update the secret on every repo that uses it:
    ```
@@ -140,7 +140,7 @@ The same SSH keypair is used by every CI repo that pushes to this manifest repo.
    done
    ```
 4. Trigger a build on each to confirm the new key works.
-5. Once all CI runs are green, delete the old deploy key from `platform-engineering` (Settings → Deploy keys).
+5. Once all CI runs are green, delete the old deploy key from `cicd-gitops-pipeline` (Settings → Deploy keys).
 6. `rm /tmp/manifest-key /tmp/manifest-key.pub`.
 
 ## Clean up orphaned GHCR packages

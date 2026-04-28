@@ -6,5 +6,5 @@ flowchart LR
 
   ci --> ssh["SSH-clone manifest repo<br/>(MANIFEST_DEPLOY_KEY)"]
   --> kust["kustomize edit set image<br/>apps/&lt;app&gt;/overlays/production"]
-  --> commit["git commit + push<br/>to platform-engineering"]
+  --> commit["git commit + push<br/>to cicd-gitops-pipeline"]
   --> argocd((ArgoCD reconciles))

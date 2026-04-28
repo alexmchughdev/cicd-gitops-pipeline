@@ -1,6 +1,6 @@
 # Architecture
 
-How a commit becomes a deployment, end-to-end. Two CI/CD patterns coexist; both land in this manifest repo and reconcile through ArgoCD.
+How a commit becomes a deployment, end-to-end. Every app's CI lands in this manifest repo and reconciles through ArgoCD.
 
 ## Cluster topology
 
@@ -60,7 +60,7 @@ flowchart LR
   gha --> ghcr[("GHCR<br/>ghcr.io/alexmchughdev/&lt;image&gt;:sha-XXXX")]
   gha --> sshclone["SSH-clone this repo<br/>(MANIFEST_DEPLOY_KEY)"]
   sshclone --> kedit["kustomize edit set image<br/>in apps/&lt;app&gt;/overlays/production"]
-  kedit --> commit["git commit + push<br/>to platform-engineering main"]
+  kedit --> commit["git commit + push<br/>to cicd-gitops-pipeline main"]
   commit -. ArgoCD watches .-> argocd[ArgoCD]
   argocd --> rolling["rolling update<br/>(new image, old ReplicaSet drained)"]
 ```
@@ -76,7 +76,7 @@ flowchart LR
 ```mermaid
 sequenceDiagram
   participant CI as GitHub Actions
-  participant Repo as platform-engineering
+  participant Repo as cicd-gitops-pipeline
   participant Argo as ArgoCD
   participant K8s as RKE2 API
   CI->>Repo: commit kustomize edit (image tag)

@@ -17,7 +17,7 @@ flowchart LR
   dev["developer<br/>git push"] --> appRepo["GitHub<br/>app repo"]
   appRepo --> ci["GitHub Actions<br/>build &amp; push"]
   ci --> ghcr[("GHCR<br/>image registry")]
-  ci --> manifest["GitHub<br/>platform-engineering<br/>(this repo)"]
+  ci --> manifest["GitHub<br/>cicd-gitops-pipeline<br/>(this repo)"]
   manifest -. ArgoCD watches .-> argocd["ArgoCD<br/>(in cluster)"]
   argocd -- reconciles --> rke2["RKE2 cluster<br/>(Rocky Linux 9, 1 node)"]
   ghcr -. pull .-> rke2
