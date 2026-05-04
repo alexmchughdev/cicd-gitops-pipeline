@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fixmycampus-keepalive
+  namespace: fixmycampus
+  labels:
+    app: fixmycampus
+    component: keepalive
+spec:
+  schedule: "0 */6 * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: fixmycampus
+            component: keepalive
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: curl
+              image: curlimages/curl:8.10.1
+              args:
+                - -fsS
+                - -o
+                - /dev/null
+                - -w
+                - "keepalive %{http_code}\n"
+                - https://fixmycampus.alexmchugh.dev/api/test
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 16Mi
+                limits:
+                  cpu: 100m
+                  memory: 32Mi
