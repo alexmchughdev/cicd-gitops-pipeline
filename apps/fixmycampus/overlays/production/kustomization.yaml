@@ -5,7 +5,7 @@ resources:
 images:
 - name: ghcr.io/alexmchughdev/fixmycampus-client
   newName: ghcr.io/alexmchughdev/fixmycampus-frontend
-  newTag: sha-5932def
+  newTag: sha-1946e79
 - name: ghcr.io/alexmchughdev/fixmycampus-server
   newName: ghcr.io/alexmchughdev/fixmycampus-backend
-  newTag: sha-5932def
+  newTag: sha-1946e79
