@@ -29,7 +29,7 @@ spec:
                 - /dev/null
                 - -w
                 - "keepalive %{http_code}\n"
-                - https://fixmycampus.alexmchugh.dev/api/test
+                - https://fixmycampus.alexmchugh.dev/api/reports
               resources:
                 requests:
                   cpu: 10m
